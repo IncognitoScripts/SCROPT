@@ -96,7 +96,7 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 min-h-screen">
+<body class="bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 min-h-screen text-white">
 
     <!-- TOAST CONTAINER -->
     <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2"></div>
@@ -147,7 +147,7 @@
                 <h2 class="text-2xl font-bold text-white mb-6">Sign In</h2>
                 <div class="space-y-4">
                     <div>
-                        <label class="text-sm text-slate-400 mb-1 block">Student ID</label>
+                        <label class="text-sm text-slate-400 mb-1 block">Student/Admin ID</label>
                         <div class="relative">
                             <i data-lucide="hash" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
                             <input id="loginId" type="text" placeholder="e.g. 618371793" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
@@ -179,7 +179,7 @@
                         </div>
                     </div>
                     <div>
-                        <label class="text-sm text-slate-400 mb-1 block">Student ID</label>
+                        <label class="text-sm text-slate-400 mb-1 block">Student ID (Any Number)</label>
                         <div class="relative">
                             <i data-lucide="hash" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
                             <input id="regId" type="text" placeholder="e.g. 618371793" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
@@ -201,7 +201,7 @@
         </div>
     </div>
 
-    <!-- ADMIN DASHBOARD -->
+    <!-- MAIN DASHBOARD -->
     <div id="adminDashboard" class="hidden min-h-screen">
         <div class="flex min-h-screen">
             
@@ -212,20 +212,31 @@
                         <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
                             <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
                         </div>
-                        <span class="text-white font-bold font-display">SchoolBook</span>
+                        <div>
+                            <span class="text-white font-bold font-display block">SchoolBook</span>
+                            <span id="sidebarUserName" class="text-xs text-indigo-400"></span>
+                        </div>
                     </div>
                 </div>
+                
                 <nav class="flex-1 p-4 space-y-1">
-                    <button onclick="showAdminView('students')" id="navStudents" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
+                    <!-- Admin Items -->
+                    <button onclick="showView('students')" id="navStudents" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
                         <i data-lucide="users" class="w-5 h-5"></i> Students
                     </button>
-                    <button onclick="showAdminView('give')" id="navGive" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
+                    <button onclick="showView('give')" id="navGive" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
                         <i data-lucide="pen-tool" class="w-5 h-5"></i> Give Mark & Note
                     </button>
-                    <button onclick="showAdminView('history')" id="navHistory" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
+                    <button onclick="showView('history')" id="navHistory" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
                         <i data-lucide="scroll-text" class="w-5 h-5"></i> All Notes History
                     </button>
+
+                    <!-- Student Item -->
+                    <button onclick="showView('my-notes')" id="navMyNotes" class="sidebar-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
+                        <i data-lucide="book-marked" class="w-5 h-5"></i> My Notes
+                    </button>
                 </nav>
+
                 <div class="p-4 border-t border-white/5">
                     <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 text-sm font-medium transition-all">
                         <i data-lucide="log-out" class="w-5 h-5"></i> Logout
@@ -243,6 +254,7 @@
                         </div>
                         <span class="text-white font-bold font-display">SchoolBook</span>
                     </div>
+                    <!-- Mobile Menu simplified to just Logout for demo purposes -->
                     <button onclick="handleLogout()" class="text-slate-400 hover:text-white transition-colors">
                         <i data-lucide="log-out" class="w-6 h-6"></i>
                     </button>
@@ -251,45 +263,51 @@
                 <!-- Content Area -->
                 <main class="flex-1 p-6 lg:p-10 overflow-y-auto">
                     
-                    <!-- Students View -->
-                    <div id="view-students" class="admin-view animate-fadeIn">
+                    <!-- Admin: Students View -->
+                    <div id="view-students" class="dashboard-view animate-fadeIn">
                         <h2 class="text-3xl font-display font-bold text-white mb-6">Registered Students</h2>
-                        <div class="bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
-                            <i data-lucide="users" class="w-12 h-12 text-slate-500 mx-auto mb-4"></i>
-                            <p class="text-slate-400">Student list will appear here.</p>
+                        <div id="studentsList" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            <!-- Dynamic Content -->
                         </div>
                     </div>
 
-                    <!-- Give Mark View -->
-                    <div id="view-give" class="admin-view hidden animate-fadeIn">
+                    <!-- Admin: Give Mark View -->
+                    <div id="view-give" class="dashboard-view hidden animate-fadeIn">
                         <h2 class="text-3xl font-display font-bold text-white mb-6">Give Mark & Note</h2>
                         <div class="max-w-2xl bg-white/5 border border-white/10 rounded-2xl p-6">
                             <div class="space-y-4">
                                 <div>
                                     <label class="text-sm text-slate-400 mb-1 block">Select Student</label>
-                                    <select class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500">
-                                        <option class="text-slate-900">Student 1 (618371793)</option>
+                                    <select id="studentSelect" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500 [&>option]:bg-slate-900">
+                                        <!-- Dynamic Content -->
                                     </select>
                                 </div>
                                 <div>
                                     <label class="text-sm text-slate-400 mb-1 block">Mark (0-10)</label>
-                                    <input type="number" min="0" max="10" placeholder="Enter mark" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500">
+                                    <input id="markInput" type="number" min="0" max="10" placeholder="Enter mark" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500">
                                 </div>
                                 <div>
                                     <label class="text-sm text-slate-400 mb-1 block">Note / Feedback</label>
-                                    <textarea rows="4" placeholder="Great job on..." class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                                    <textarea id="noteInput" rows="4" placeholder="Great job on..." class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500"></textarea>
                                 </div>
-                                <button class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-xl transition-all">Submit Evaluation</button>
+                                <button onclick="submitNote()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-xl transition-all">Submit Evaluation</button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- History View -->
-                    <div id="view-history" class="admin-view hidden animate-fadeIn">
+                    <!-- Admin: All History View -->
+                    <div id="view-history" class="dashboard-view hidden animate-fadeIn">
                         <h2 class="text-3xl font-display font-bold text-white mb-6">All Notes History</h2>
-                        <div class="bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
-                            <i data-lucide="scroll-text" class="w-12 h-12 text-slate-500 mx-auto mb-4"></i>
-                            <p class="text-slate-400">History logs will appear here.</p>
+                        <div id="historyList" class="space-y-4">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+
+                    <!-- Student: My Notes View -->
+                    <div id="view-my-notes" class="dashboard-view hidden animate-fadeIn">
+                        <h2 class="text-3xl font-display font-bold text-white mb-6">My Personal Notes</h2>
+                        <div id="myNotesList" class="space-y-4">
+                            <!-- Dynamic Content -->
                         </div>
                     </div>
 
@@ -298,62 +316,25 @@
         </div>
     </div>
 
-    <!-- SCRIPT FOR FUNCTIONALITY -->
     <script>
-        // Initialize Icons
-        lucide.createIcons();
-
-        // Auth Logic
-        function showRegister() {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('registerForm').classList.remove('hidden');
-            document.getElementById('registerForm').classList.add('animate-slideUp');
+        // --- DATA INITIALIZATION ---
+        // Setup default admin and storage on first load
+        function initStorage() {
+            let users = JSON.parse(localStorage.getItem('sb_users')) || [];
+            // Create Admin if not exists
+            if (!users.find(u => u.id === '666666')) {
+                users.push({ id: '666666', name: 'Administrator', password: 'lukajiji', role: 'admin' });
+                localStorage.setItem('sb_users', JSON.stringify(users));
+            }
+            if (!localStorage.getItem('sb_notes')) {
+                localStorage.setItem('sb_notes', JSON.stringify([]));
+            }
         }
 
-        function showLogin() {
-            document.getElementById('registerForm').classList.add('hidden');
-            document.getElementById('loginForm').classList.remove('hidden');
-            document.getElementById('loginForm').classList.add('animate-slideUp');
-        }
-
-        function handleLogin() {
-            // Mock Login Action
-            document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('adminDashboard').classList.remove('hidden');
-        }
-
-        function handleRegister() {
-            // Mock Register Action
-            handleLogin();
-        }
-
-        function handleLogout() {
-            document.getElementById('adminDashboard').classList.add('hidden');
-            document.getElementById('authScreen').classList.remove('hidden');
-            showLogin();
-        }
-
-        // Dashboard View Logic
-        function showAdminView(viewId) {
-            // Hide all views
-            const views = document.querySelectorAll('.admin-view');
-            views.forEach(view => view.classList.add('hidden'));
-
-            // Show selected view
-            document.getElementById(`view-${viewId}`).classList.remove('hidden');
-
-            // Update sidebar active states
-            const navItems = ['students', 'give', 'history'];
-            navItems.forEach(item => {
-                const btn = document.getElementById(`nav${item.charAt(0).toUpperCase() + item.slice(1)}`);
-                if(item === viewId) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-        }
-
-        // Popup Logic
-        function dismissNotePopup() {
-            document.getEle
+        // --- HELPER FUNCTIONS ---
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const color = type === 'success' ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-red-500 bg-red-500/10 text-red-400';
+            toast.className = `toast px-4 py-3 rounded-xl border backdrop-blur-md font-medium shadow-lg flex items-center gap-2 ${color}`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-5 h-5"></i> ${message}`;
+            document.getElementById('toastContainer').appendChild(toast)
