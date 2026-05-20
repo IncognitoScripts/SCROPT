@@ -6,335 +6,885 @@
     <title>SchoolBook - Marks & Notes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Space Grotesk', 'sans-serif'],
-                    }
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
                 }
             }
         }
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .font-display { font-family: 'Space Grotesk', sans-serif; }
-        
-        @keyframes slideUp {
-            from { transform: translateY(40px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        * { font-family: 'Inter', sans-serif; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .overlay-note {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.55);
+            display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.3s ease;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes scaleIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        @keyframes pulse-green {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-            50% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); }
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-
-        .animate-slideUp { animation: slideUp 0.5s ease-out forwards; }
-        .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
-        .animate-scaleIn { animation: scaleIn 0.3s ease-out forwards; }
-        .animate-pulse-green { animation: pulse-green 2s infinite; }
-        .animate-float { animation: float 3s ease-in-out infinite; }
-        
-        .mark-circle {
-            width: 52px; height: 52px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1.2rem;
-        }
-        .mark-0, .mark-1 { background: #fecaca; color: #991b1b; }
-        .mark-2, .mark-3 { background: #fed7aa; color: #9a3412; }
-        .mark-4, .mark-5 { background: #fef08a; color: #854d0e; }
-        .mark-6, .mark-7 { background: #bbf7d0; color: #166534; }
-        .mark-8 { background: #86efac; color: #166534; }
-        .mark-9, .mark-10 { background: #4ade80; color: #052e16; }
-
-        .sidebar-item { transition: all 0.2s; }
-        .sidebar-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(4px);
-        }
-        .sidebar-item.active {
-            background: rgba(255, 255, 255, 0.15);
-            border-left: 3px solid #22c55e;
-        }
-        .notification-overlay {
-            backdrop-filter: blur(12px);
-            background: rgba(0, 0, 0, 0.6);
-        }
-        .toast { animation: slideUp 0.3s ease-out forwards; }
-        
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1e1b4b; }
-        ::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 3px; }
-        
-        .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-up { animation: slideUp 0.35s ease; }
+        .mark-btn { transition: all 0.15s ease; }
+        .mark-btn:hover { transform: scale(1.15); }
+        .mark-btn.selected { transform: scale(1.2); box-shadow: 0 0 0 3px rgba(255,255,255,0.5); }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 min-h-screen text-white">
+<body class="bg-gray-950 text-white min-h-screen">
 
-    <!-- TOAST CONTAINER -->
-    <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2"></div>
+    <!-- ==================== AUTH PAGE ==================== -->
+    <div id="page-auth" class="page active">
+        <div class="min-h-screen flex items-center justify-center p-4">
+            <div class="w-full max-w-md">
+                <!-- Logo -->
+                <div class="text-center mb-8 slide-up">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mb-4 shadow-lg shadow-emerald-500/30">
+                        <i data-lucide="book-open" class="w-10 h-10 text-white"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold">SchoolBook</h1>
+                    <p class="text-gray-400 mt-1">Marks & Notes for Students</p>
+                </div>
 
-    <!-- FULL SCREEN NOTE POPUP -->
-    <div id="notePopup" class="hidden fixed inset-0 z-[90] notification-overlay flex items-center justify-center p-4">
-        <div class="animate-scaleIn bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl shadow-2xl max-w-lg w-full p-8 text-white relative animate-pulse-green">
-            <button onclick="dismissNotePopup()" class="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                    <i data-lucide="bell-ring" class="w-7 h-7"></i>
+                <!-- Tab Switch -->
+                <div class="flex bg-gray-900 rounded-xl p-1 mb-6 slide-up" style="animation-delay: 0.05s">
+                    <button id="tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all bg-gray-800 text-white">Login</button>
+                    <button id="tab-register" onclick="switchAuthTab('register')" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all text-gray-400">Register</button>
                 </div>
-                <div>
-                    <p class="text-white/70 text-sm font-medium">New Mark Received</p>
-                    <p id="popupTime" class="text-white/60 text-xs"></p>
-                </div>
-            </div>
-            <div class="bg-white/15 rounded-2xl p-6 mb-4">
-                <div class="flex items-center gap-4 mb-3">
-                    <span class="text-white/70 text-sm">Mark:</span>
-                    <span id="popupMark" class="text-4xl font-black font-display"></span>
-                    <span class="text-white/50 text-lg">/ 10</span>
-                </div>
-                <div class="border-t border-white/20 pt-3">
-                    <span class="text-white/70 text-sm">Note:</span>
-                    <p id="popupNote" class="text-lg font-medium mt-1 leading-relaxed"></p>
-                </div>
-            </div>
-            <p class="text-center text-white/50 text-sm">Press X to dismiss</p>
-        </div>
-    </div>
 
-    <!-- AUTH SCREEN -->
-    <div id="authScreen" class="min-h-screen flex items-center justify-center p-4">
-        <div class="w-full max-w-md">
-            <div class="text-center mb-8 animate-slideUp">
-                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-2xl shadow-indigo-500/30 mb-4 animate-float">
-                    <i data-lucide="book-open" class="w-10 h-10 text-white"></i>
+                <!-- Login Form -->
+                <div id="form-login" class="slide-up" style="animation-delay: 0.1s">
+                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1.5">Student ID</label>
+                            <div class="relative">
+                                <i data-lucide="hash" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                                <input id="login-id" type="number" placeholder="e.g. 618371793" class="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
+                            <div class="relative">
+                                <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                                <input id="login-pass" type="password" placeholder="Your password" class="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
+                            </div>
+                        </div>
+                        <div id="login-error" class="text-red-400 text-sm hidden"></div>
+                        <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 active:scale-[0.98]">
+                            Log In
+                        </button>
+                    </div>
                 </div>
-                <h1 class="text-4xl font-black text-white font-display mb-2">SchoolBook</h1>
-                <p class="text-slate-400">Marks & Notes for Students</p>
-            </div>
 
-            <!-- LOGIN FORM -->
-            <div id="loginForm" class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 animate-slideUp" style="animation-delay: 0.1s">
-                <h2 class="text-2xl font-bold text-white mb-6">Sign In</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="text-sm text-slate-400 mb-1 block">Student/Admin ID</label>
-                        <div class="relative">
-                            <i data-lucide="hash" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
-                            <input id="loginId" type="text" placeholder="e.g. 618371793" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                <!-- Register Form -->
+                <div id="form-register" class="hidden slide-up">
+                    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1.5">Choose Student ID</label>
+                            <div class="relative">
+                                <i data-lucide="hash" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                                <input id="reg-id" type="number" placeholder="e.g. 618371793" class="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <label class="text-sm text-slate-400 mb-1 block">Password</label>
-                        <div class="relative">
-                            <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
-                            <input id="loginPass" type="password" placeholder="Your password" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1.5">Your Name</label>
+                            <div class="relative">
+                                <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                                <input id="reg-name" type="text" placeholder="Full name" class="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
+                            </div>
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
+                            <div class="relative">
+                                <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                                <input id="reg-pass" type="password" placeholder="Create a password" class="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1.5">Confirm Password</label>
+                            <div class="relative">
+                                <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                                <input id="reg-pass2" type="password" placeholder="Repeat password" class="w-full bg-gray-800 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
+                            </div>
+                        </div>
+                        <div id="reg-error" class="text-red-400 text-sm hidden"></div>
+                        <button onclick="handleRegister()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 active:scale-[0.98]">
+                            Create Account
+                        </button>
                     </div>
-                    <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98]">
-                        Sign In
-                    </button>
                 </div>
-                <p class="text-slate-500 text-center mt-5 text-sm">Don't have an account? <button onclick="showRegister()" class="text-indigo-400 hover:text-indigo-300 font-medium">Register</button></p>
-            </div>
-
-            <!-- REGISTER FORM -->
-            <div id="registerForm" class="hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8">
-                <h2 class="text-2xl font-bold text-white mb-6">Create Account</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="text-sm text-slate-400 mb-1 block">Full Name</label>
-                        <div class="relative">
-                            <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
-                            <input id="regName" type="text" placeholder="Your full name" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-sm text-slate-400 mb-1 block">Student ID (Any Number)</label>
-                        <div class="relative">
-                            <i data-lucide="hash" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
-                            <input id="regId" type="text" placeholder="e.g. 618371793" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-sm text-slate-400 mb-1 block">Password</label>
-                        <div class="relative">
-                            <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
-                            <input id="regPass" type="password" placeholder="Choose a password" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
-                        </div>
-                    </div>
-                    <button onclick="handleRegister()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-green-500/25 active:scale-[0.98]">
-                        Create Account
-                    </button>
-                </div>
-                <p class="text-slate-500 text-center mt-5 text-sm">Already have an account? <button onclick="showLogin()" class="text-indigo-400 hover:text-indigo-300 font-medium">Sign In</button></p>
             </div>
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD -->
-    <div id="adminDashboard" class="hidden min-h-screen">
-        <div class="flex min-h-screen">
-            
-            <!-- Sidebar -->
-            <aside class="hidden lg:flex w-64 bg-slate-900/80 backdrop-blur-xl border-r border-white/5 flex-col">
-                <div class="p-6 border-b border-white/5">
+    <!-- ==================== STUDENT DASHBOARD ==================== -->
+    <div id="page-student" class="page">
+        <div class="min-h-screen bg-gray-950">
+            <!-- Header -->
+            <header class="sticky top-0 z-50 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800">
+                <div class="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <div class="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center">
                             <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
                         </div>
                         <div>
-                            <span class="text-white font-bold font-display block">SchoolBook</span>
-                            <span id="sidebarUserName" class="text-xs text-indigo-400"></span>
+                            <h2 class="font-bold text-sm">SchoolBook</h2>
+                            <p class="text-xs text-gray-400" id="student-header-name">Student</p>
                         </div>
                     </div>
-                </div>
-                
-                <nav class="flex-1 p-4 space-y-1">
-                    <!-- Admin Items -->
-                    <button onclick="showView('students')" id="navStudents" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
-                        <i data-lucide="users" class="w-5 h-5"></i> Students
-                    </button>
-                    <button onclick="showView('give')" id="navGive" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
-                        <i data-lucide="pen-tool" class="w-5 h-5"></i> Give Mark & Note
-                    </button>
-                    <button onclick="showView('history')" id="navHistory" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
-                        <i data-lucide="scroll-text" class="w-5 h-5"></i> All Notes History
-                    </button>
-
-                    <!-- Student Item -->
-                    <button onclick="showView('my-notes')" id="navMyNotes" class="sidebar-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
-                        <i data-lucide="book-marked" class="w-5 h-5"></i> My Notes
-                    </button>
-                </nav>
-
-                <div class="p-4 border-t border-white/5">
-                    <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 text-sm font-medium transition-all">
-                        <i data-lucide="log-out" class="w-5 h-5"></i> Logout
+                    <button onclick="handleLogout()" class="flex items-center gap-1.5 text-gray-400 hover:text-red-400 transition text-sm">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Logout</span>
                     </button>
                 </div>
-            </aside>
+            </header>
 
-            <!-- Main Workspace -->
-            <div class="flex-1 flex flex-col">
-                <!-- Mobile Header -->
-                <header class="lg:hidden bg-slate-900/80 backdrop-blur-xl border-b border-white/5 p-4 flex items-center justify-between">
+            <div class="max-w-lg mx-auto px-4 py-6 space-y-4">
+                <!-- Welcome Card -->
+                <div id="welcome-card" class="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-5 shadow-lg shadow-emerald-500/20">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i data-lucide="graduation-cap" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold" id="student-welcome">Welcome!</h3>
+                            <p class="text-emerald-100 text-sm" id="student-id-display">ID: ---</p>
+                        </div>
+                    </div>
+                    <p class="text-emerald-100 text-sm mt-1">Your marks and notes from teachers will appear here.</p>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i data-lucide="star" class="w-4 h-4 text-yellow-400"></i>
+                            <span class="text-xs text-gray-400">Average Mark</span>
+                        </div>
+                        <p class="text-2xl font-bold" id="avg-mark">-</p>
+                    </div>
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i data-lucide="file-text" class="w-4 h-4 text-blue-400"></i>
+                            <span class="text-xs text-gray-400">Total Notes</span>
+                        </div>
+                        <p class="text-2xl font-bold" id="total-notes">0</p>
+                    </div>
+                </div>
+
+                <!-- View All Notes Button -->
+                <button onclick="showAllNotes()" class="w-full bg-gray-900 border border-gray-800 hover:border-emerald-500/50 rounded-xl p-4 flex items-center justify-between transition group">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
+                        <div class="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                            <i data-lucide="text" class="w-5 h-5 text-blue-400"></i>
                         </div>
-                        <span class="text-white font-bold font-display">SchoolBook</span>
+                        <div class="text-left">
+                            <p class="font-semibold text-sm">Text — My Notes</p>
+                            <p class="text-xs text-gray-400">View all your marks & notes</p>
+                        </div>
                     </div>
-                    <!-- Mobile Menu simplified to just Logout for demo purposes -->
-                    <button onclick="handleLogout()" class="text-slate-400 hover:text-white transition-colors">
-                        <i data-lucide="log-out" class="w-6 h-6"></i>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-gray-500 group-hover:text-emerald-400 transition"></i>
+                </button>
+
+                <!-- Recent Notes -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-sm text-gray-300">Recent Notes</h3>
+                    </div>
+                    <div id="recent-notes-list" class="space-y-2">
+                        <div class="text-center py-8 text-gray-500">
+                            <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+                            <p class="text-sm">No notes yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ADMIN DASHBOARD ==================== -->
+    <div id="page-admin" class="page">
+        <div class="min-h-screen bg-gray-950">
+            <!-- Header -->
+            <header class="sticky top-0 z-50 bg-gray-950/80 backdrop-blur-xl border-b border-gray-800">
+                <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
+                            <i data-lucide="shield" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-sm">SchoolBook Admin</h2>
+                            <p class="text-xs text-gray-400">Teacher Panel</p>
+                        </div>
+                    </div>
+                    <button onclick="handleLogout()" class="flex items-center gap-1.5 text-gray-400 hover:text-red-400 transition text-sm">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Logout</span>
                     </button>
-                </header>
+                </div>
+            </header>
 
-                <!-- Content Area -->
-                <main class="flex-1 p-6 lg:p-10 overflow-y-auto">
-                    
-                    <!-- Admin: Students View -->
-                    <div id="view-students" class="dashboard-view animate-fadeIn">
-                        <h2 class="text-3xl font-display font-bold text-white mb-6">Registered Students</h2>
-                        <div id="studentsList" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            <!-- Dynamic Content -->
+            <div class="max-w-2xl mx-auto px-4 py-6 space-y-4">
+                <!-- Stats Row -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>
+                            <span class="text-xs text-gray-400">Students</span>
                         </div>
+                        <p class="text-2xl font-bold" id="admin-total-students">0</p>
                     </div>
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i>
+                            <span class="text-xs text-gray-400">Notes Given</span>
+                        </div>
+                        <p class="text-2xl font-bold" id="admin-total-notes">0</p>
+                    </div>
+                </div>
 
-                    <!-- Admin: Give Mark View -->
-                    <div id="view-give" class="dashboard-view hidden animate-fadeIn">
-                        <h2 class="text-3xl font-display font-bold text-white mb-6">Give Mark & Note</h2>
-                        <div class="max-w-2xl bg-white/5 border border-white/10 rounded-2xl p-6">
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="text-sm text-slate-400 mb-1 block">Select Student</label>
-                                    <select id="studentSelect" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500 [&>option]:bg-slate-900">
-                                        <!-- Dynamic Content -->
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-sm text-slate-400 mb-1 block">Mark (0-10)</label>
-                                    <input id="markInput" type="number" min="0" max="10" placeholder="Enter mark" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <label class="text-sm text-slate-400 mb-1 block">Note / Feedback</label>
-                                    <textarea id="noteInput" rows="4" placeholder="Great job on..." class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500"></textarea>
-                                </div>
-                                <button onclick="submitNote()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-xl transition-all">Submit Evaluation</button>
+                <!-- Give Note Section -->
+                <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                    <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+                        <i data-lucide="pen-line" class="w-5 h-5 text-emerald-400"></i>
+                        Give a Mark & Note
+                    </h3>
+
+                    <div class="space-y-4">
+                        <!-- Select Student -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1.5">Select Student</label>
+                            <select id="admin-select-student" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition appearance-none">
+                                <option value="">— Choose a student —</option>
+                            </select>
+                        </div>
+
+                        <!-- Mark 0-10 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Mark (0 - 10)</label>
+                            <div class="flex flex-wrap gap-2" id="mark-buttons">
+                                <!-- Generated by JS -->
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Admin: All History View -->
-                    <div id="view-history" class="dashboard-view hidden animate-fadeIn">
-                        <h2 class="text-3xl font-display font-bold text-white mb-6">All Notes History</h2>
-                        <div id="historyList" class="space-y-4">
-                            <!-- Dynamic Content -->
+                        <!-- Note Text -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1.5">Note / Comment</label>
+                            <textarea id="admin-note-text" rows="3" placeholder="Write your note about this student..." class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition resize-none"></textarea>
+                        </div>
+
+                        <div id="admin-give-error" class="text-red-400 text-sm hidden"></div>
+
+                        <button onclick="handleGiveNote()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 active:scale-[0.98]">
+                            <span class="flex items-center justify-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Send Note
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- All Students -->
+                <div>
+                    <h3 class="font-semibold text-sm text-gray-300 mb-3 flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4"></i>
+                        All Students
+                    </h3>
+                    <div id="admin-student-list" class="space-y-2">
+                        <div class="text-center py-8 text-gray-500">                            <i data-lucide="user-plus" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+                            <p class="text-sm">No students registered yet</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Student: My Notes View -->
-                    <div id="view-my-notes" class="dashboard-view hidden animate-fadeIn">
-                        <h2 class="text-3xl font-display font-bold text-white mb-6">My Personal Notes</h2>
-                        <div id="myNotesList" class="space-y-4">
-                            <!-- Dynamic Content -->
-                        </div>
+    <!-- ==================== ALL NOTES MODAL (Student) ==================== -->
+    <div id="modal-all-notes" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center">
+        <div class="bg-gray-900 border border-gray-800 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[85vh] flex flex-col slide-up">
+            <div class="flex items-center justify-between p-5 border-b border-gray-800">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i data-lucide="text" class="w-5 h-5 text-blue-400"></i>
+                    My Notes
+                </h3>
+                <button onclick="closeModal('modal-all-notes')" class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="overflow-y-auto p-5 space-y-3 flex-1" id="all-notes-content">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== STUDENT DETAIL MODAL (Admin) ==================== -->
+    <div id="modal-student-detail" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center">
+        <div class="bg-gray-900 border border-gray-800 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[85vh] flex flex-col slide-up">
+            <div class="flex items-center justify-between p-5 border-b border-gray-800">
+                <h3 class="font-bold text-lg" id="detail-student-name">Student</h3>
+                <button onclick="closeModal('modal-student-detail')" class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="overflow-y-auto p-5 space-y-3 flex-1" id="student-detail-content">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== GREEN NOTE OVERLAY (Student receives) ==================== -->
+    <div id="note-overlay" class="hidden overlay-note">
+        <div class="w-full max-w-md mx-4 slide-up">
+            <div class="bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl p-6 shadow-2xl shadow-emerald-500/40 relative">
+                <button onclick="dismissNote()" class="absolute top-3 right-3 w-9 h-9 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center transition">
+                    <i data-lucide="x" class="w-5 h-5 text-white"></i>
+                </button>
+                <div class="flex items-center gap-2 mb-3">
+                    <i data-lucide="bell-ring" class="w-5 h-5 text-white"></i>
+                    <span class="font-bold text-white/80 text-sm">NEW NOTE FROM TEACHER</span>
+                </div>
+                <div class="bg-white/20 rounded-xl p-4 mb-3">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="text-sm text-white/70">Mark:</span>
+                        <span class="text-3xl font-extrabold text-white" id="overlay-mark">7</span>
+                        <span class="text-white/60 text-sm">/10</span>
                     </div>
-
-                </main>
+                    <p class="text-white text-sm leading-relaxed" id="overlay-note-text">Note text here</p>
+                </div>
+                <p class="text-emerald-100 text-xs" id="overlay-date">Date</p>
             </div>
         </div>
     </div>
 
     <script>
-        // --- DATA INITIALIZATION ---
-        // Setup default admin and storage on first load
-        function initStorage() {
-            let users = JSON.parse(localStorage.getItem('sb_users')) || [];
-            // Create Admin if not exists
-            if (!users.find(u => u.id === '666666')) {
-                users.push({ id: '666666', name: 'Administrator', password: 'lukajiji', role: 'admin' });
-                localStorage.setItem('sb_users', JSON.stringify(users));
+        // ===== DATA LAYER (localStorage) =====
+        function getData(key, fallback) {
+            try {
+                const d = localStorage.getItem(key);
+                return d ? JSON.parse(d) : fallback;
+            } catch { return fallback; }
+        }
+        function setData(key, val) {
+            localStorage.setItem(key, JSON.stringify(val));
+        }
+
+        // Initialize default admin
+        function initDB() {
+            let users = getData('sb_users', []);
+            const adminExists = users.find(u => u.id === '666666');
+            if (!adminExists) {
+                users.push({ id: '666666', password: 'lukajiji', name: 'Admin Teacher', role: 'admin' });
+                setData('sb_users', users);
             }
-            if (!localStorage.getItem('sb_notes')) {
-                localStorage.setItem('sb_notes', JSON.stringify([]));
+            if (!getData('sb_notes', null)) {
+                setData('sb_notes', []);
             }
         }
 
-        // --- HELPER FUNCTIONS ---
-        function showToast(message, type = 'success') {
+        function getUsers() { return getData('sb_users', []); }
+        function getNotes() { return getData('sb_notes', []); }
+        function saveNotes(notes) { setData('sb_notes', notes); }
+        function saveUsers(users) { setData('sb_users', users); }
+
+        let currentUser = null;
+        let selectedMark = null;
+
+        // ===== AUTH =====
+        function switchAuthTab(tab) {
+            const loginTab = document.getElementById('tab-login');
+            const registerTab = document.getElementById('tab-register');
+            const loginForm = document.getElementById('form-login');
+            const registerForm = document.getElementById('form-register');
+
+            if (tab === 'login') {
+                loginTab.className = 'flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all bg-gray-800 text-white';
+                registerTab.className = 'flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all text-gray-400';
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+            } else {
+                registerTab.className = 'flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all bg-gray-800 text-white';
+                loginTab.className = 'flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all text-gray-400';
+                registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+            }
+            hideErrors();
+        }
+
+        function hideErrors() {
+            document.getElementById('login-error').classList.add('hidden');
+            document.getElementById('reg-error').classList.add('hidden');
+        }
+
+        function handleLogin() {
+            const id = document.getElementById('login-id').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const errEl = document.getElementById('login-error');
+
+            if (!id || !pass) {
+                errEl.textContent = 'Please fill in all fields.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            const users = getUsers();
+            const user = users.find(u => u.id === id && u.password === pass);
+
+            if (!user) {
+                errEl.textContent = 'Invalid ID or password.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            currentUser = user;
+            errEl.classList.add('hidden');
+
+            if (user.role === 'admin') {
+                showPage('page-admin');
+                renderAdmin();
+            } else {
+                showPage('page-student');
+                renderStudent();
+                checkForNewNotes();
+            }
+        }
+
+        function handleRegister() {
+            const id = document.getElementById('reg-id').value.trim();
+            const name = document.getElementById('reg-name').value.trim();
+            const pass = document.getElementById('reg-pass').value;
+            const pass2 = document.getElementById('reg-pass2').value;
+            const errEl = document.getElementById('reg-error');
+
+            if (!id || !name || !pass) {
+                errEl.textContent = 'Please fill in all fields.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+            if (pass !== pass2) {
+                errEl.textContent = 'Passwords do not match.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+            if (pass.length < 3) {
+                errEl.textContent = 'Password must be at least 3 characters.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            const users = getUsers();
+            if (users.find(u => u.id === id)) {
+                errEl.textContent = 'This ID is already taken.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            const newUser = { id, name, password: pass, role: 'student' };
+            users.push(newUser);
+            saveUsers(users);
+
+            currentUser = newUser;
+            errEl.classList.add('hidden');
+
+            showPage('page-student');
+            renderStudent();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            showPage('page-auth');
+            document.getElementById('login-id').value = '';
+            document.getElementById('login-pass').value = '';
+        }
+
+        // ===== PAGE ROUTING =====
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            lucide.createIcons();
+        }
+
+        // ===== STUDENT DASHBOARD =====
+        function renderStudent() {
+            const notes = getNotes().filter(n => n.studentId === currentUser.id);
+            const viewedNotes = getData('sb_viewed_' + currentUser.id, []);
+            const unviewed = notes.filter(n => !viewedNotes.includes(n.id));
+            const totalMarks = notes.filter(n => n.mark !== null);
+            const avg = totalMarks.length > 0 ? (totalMarks.reduce((s, n) => s + n.mark, 0) / totalMarks.length).toFixed(1) : '-';
+
+            document.getElementById('student-welcome').textContent = `Welcome, ${currentUser.name}!`;
+            document.getElementById('student-id-display').textContent = `ID: ${currentUser.id}`;
+            document.getElementById('student-header-name').textContent = currentUser.name;
+            document.getElementById('avg-mark').textContent = avg;
+            document.getElementById('total-notes').textContent = notes.length;
+
+            // Recent notes (last 5)
+            const recent = [...notes].sort((a, b) => b.timestamp - a.timestamp).slice(0, 5);
+            const listEl = document.getElementById('recent-notes-list');
+
+            if (recent.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+                        <p class="text-sm">No notes yet</p>
+                    </div>`;
+            } else {
+                listEl.innerHTML = recent.map(n => {
+                    const isViewed = viewedNotes.includes(n.id);
+                    const markColor = n.mark >= 7 ? 'text-emerald-400' : n.mark >= 5 ? 'text-yellow-400' : 'text-red-400';
+                    const markBg = n.mark >= 7 ? 'bg-emerald-500/10' : n.mark >= 5 ? 'bg-yellow-500/10' : 'bg-red-500/10';
+                    return `
+                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-start gap-3">
+                        <div class="w-11 h-11 ${markBg} rounded-lg flex items-center justify-center shrink-0">
+                            <span class="text-lg font-bold ${markColor}">${n.mark}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-gray-200 leading-relaxed">${escapeHtml(n.text)}</p>
+                            <p class="text-xs text-gray-500 mt-1">${new Date(n.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        ${!isViewed ? '<span class="w-2 h-2 bg-emerald-400 rounded-full shrink-0 mt-2"></span>' : ''}
+                    </div>`;
+                }).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function checkForNewNotes() {
+            const notes = getNotes().filter(n => n.studentId === currentUser.id);
+            const viewedNotes = getData('sb_viewed_' + currentUser.id, []);
+            const unviewed = notes.filter(n => !viewedNotes.includes(n.id));
+
+            if (unviewed.length > 0) {
+                showNoteOverlay(unviewed[0]);
+            }
+        }
+
+        function showNoteOverlay(note) {
+            document.getElementById('overlay-mark').textContent = note.mark;
+            document.getElementById('overlay-note-text').textContent = note.text;
+            document.getElementById('overlay-date').textContent = new Date(note.timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            document.getElementById('note-overlay').classList.remove('hidden');
+            lucide.createIcons();
+
+            // Store current note id for dismissal
+            document.getElementById('note-overlay').dataset.noteId = note.id;
+        }
+
+        function dismissNote() {
+            const overlay = document.getElementById('note-overlay');
+            const noteId = overlay.dataset.noteId;
+            overlay.classList.add('hidden');
+
+            // Mark as viewed
+            if (currentUser && noteId) {
+                let viewed = getData('sb_viewed_' + currentUser.id, []);
+                if (!viewed.includes(noteId)) {
+                    viewed.push(noteId);
+                    setData('sb_viewed_' + currentUser.id, viewed);
+                }
+            }
+
+            renderStudent();
+
+            // Check for more unviewed notes
+            setTimeout(() => {
+                checkForNewNotes();
+            }, 400);
+        }
+        function showAllNotes() {
+            const notes = getNotes().filter(n => n.studentId === currentUser.id);
+            const viewedNotes = getData('sb_viewed_' + currentUser.id, []);
+            const container = document.getElementById('all-notes-content');
+
+            const sorted = [...notes].sort((a, b) => b.timestamp - a.timestamp);
+
+            if (sorted.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-gray-500">
+                        <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+                        <p class="font-medium">No notes yet</p>
+                        <p class="text-sm mt-1">Your teacher hasn't sent any notes yet.</p>
+                    </div>`;
+            } else {
+                container.innerHTML = sorted.map(n => {
+                    const markColor = n.mark >= 7 ? 'text-emerald-400' : n.mark >= 5 ? 'text-yellow-400' : 'text-red-400';
+                    const markBg = n.mark >= 7 ? 'bg-emerald-500/10' : n.mark >= 5 ? 'bg-yellow-500/10' : 'bg-red-500/10';
+                    const isViewed = viewedNotes.includes(n.id);
+                    return `
+                    <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-12 h-12 ${markBg} rounded-xl flex items-center justify-center shrink-0">
+                                <span class="text-xl font-bold ${markColor}">${n.mark}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm text-gray-200 leading-relaxed">${escapeHtml(n.text)}</p>
+                                <p class="text-xs text-gray-500 mt-1.5">${new Date(n.timestamp).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                            ${!isViewed ? '<span class="w-2.5 h-2.5 bg-emerald-400 rounded-full shrink-0 mt-1"></span>' : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+
+            document.getElementById('modal-all-notes').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        // ===== ADMIN DASHBOARD =====
+        function renderAdmin() {
+            const users = getUsers().filter(u => u.role === 'student');
+            const notes = getNotes();
+
+            document.getElementById('admin-total-students').textContent = users.length;
+            document.getElementById('admin-total-notes').textContent = notes.length;
+
+            // Populate student select
+            const select = document.getElementById('admin-select-student');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">— Choose a student —</option>';
+            users.forEach(u => {
+                select.innerHTML += `<option value="${u.id}" ${u.id === currentVal ? 'selected' : ''}>${u.name} (ID: ${u.id})</option>`;
+            });
+
+            // Render mark buttons
+            const markContainer = document.getElementById('mark-buttons');
+            markContainer.innerHTML = '';
+            selectedMark = null;
+            for (let i = 0; i <= 10; i++) {
+                const colors = i >= 7 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : i >= 5 ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30';
+                markContainer.innerHTML += `<button onclick="selectMark(${i})" class="mark-btn w-10 h-10 rounded-xl border ${colors} font-bold text-sm hover:bg-opacity-30 transition" data-mark="${i}">${i}</button>`;
+            }
+
+            // Student list
+            const listEl = document.getElementById('admin-student-list');
+            if (users.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i data-lucide="user-plus" class="w-10 h-10 mx-auto mb-2 opacity-40"></i>
+                        <p class="text-sm">No students registered yet</p>
+                    </div>`;
+            } else {
+                listEl.innerHTML = users.map(u => {
+                    const studentNotes = notes.filter(n => n.studentId === u.id);
+                    const avg = studentNotes.length > 0 ? (studentNotes.reduce((s, n) => s + n.mark, 0) / studentNotes.length).toFixed(1) : '-';
+                    return `
+                    <button onclick="showStudentDetail('${u.id}')" class="w-full bg-gray-900 border border-gray-800 hover:border-emerald-500/30 rounded-xl p-4 flex items-center justify-between transition group text-left">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                                <i data-lucide="user" class="w-5 h-5 text-emerald-400"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-sm">${escapeHtml(u.name)}</p>
+                                <p class="text-xs text-gray-500">ID: ${u.id} · ${studentNotes.length} notes · Avg: ${avg}</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-600 group-hover:text-emerald-400 transition"></i>
+                    </button>`;
+                }).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function selectMark(mark) {
+            selectedMark = mark;
+            document.querySelectorAll('.mark-btn').forEach(btn => {
+                btn.classList.remove('selected', 'ring-2', 'ring-white/50');
+                if (parseInt(btn.dataset.mark) === mark) {
+                    btn.classList.add('selected', 'ring-2', 'ring-white/50');
+                }
+            });
+        }
+
+        function handleGiveNote() {
+            const studentId = document.getElementById('admin-select-student').value;
+            const noteText = document.getElementById('admin-note-text').value.trim();
+            const errEl = document.getElementById('admin-give-error');
+
+            if (!studentId) {
+                errEl.textContent = 'Please select a student.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+            if (selectedMark === null) {
+                errEl.textContent = 'Please select a mark (0-10).';
+                errEl.classList.remove('hidden');
+                return;
+            }
+            if (!noteText) {
+                errEl.textContent = 'Please write a note.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            errEl.classList.add('hidden');
+
+            const notes = getNotes();
+            const newNote = {
+                id: 'n_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                studentId,
+                mark: selectedMark,
+                text: noteText,
+                timestamp: Date.now()
+            };
+            notes.push(newNote);
+            saveNotes(notes);
+
+            // Reset form
+            document.getElementById('admin-note-text').value = '';
+            selectedMark = null;
+            document.querySelectorAll('.mark-btn').forEach(btn => btn.classList.remove('selected', 'ring-2', 'ring-white/50'));
+
+            // Show success toast
+            showToast('Note sent successfully! ✅');
+
+            renderAdmin();
+        }
+
+        function showStudentDetail(studentId) {
+            const users = getUsers();
+            const user = users.find(u => u.id === studentId);
+            const notes = getNotes().filter(n => n.studentId === studentId);
+            const viewed = getData('sb_viewed_' + studentId, []);
+            const sorted = [...notes].sort((a, b) => b.timestamp - a.timestamp);
+
+            document.getElementById('detail-student-name').textContent = user ? user.name : 'Student';
+
+            const container = document.getElementById('student-detail-content');
+            const avg = notes.length > 0 ? (notes.reduce((s, n) => s + n.mark, 0) / notes.length).toFixed(1) : '-';
+
+            let html = `
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-gray-800 rounded-xl p-3 text-center">
+                        <p class="text-2xl font-bold text-emerald-400">${avg}</p>
+                        <p class="text-xs text-gray-400">Average</p>
+                    </div>
+                    <div class="bg-gray-800 rounded-xl p-3 text-center">
+                        <p class="text-2xl font-bold text-blue-400">${notes.length}</p>
+                        <p class="text-xs text-gray-400">Total Notes</p>
+                    </div>
+                </div>`;
+
+            if (sorted.length === 0) {
+                html += `<div class="text-center py-6 text-gray-500"><p class="text-sm">No notes yet</p></div>`;
+            } else {
+                html += sorted.map(n => {
+                    const markColor = n.mark >= 7 ? 'text-emerald-400' : n.mark >= 5 ? 'text-yellow-400' : 'text-red-400';
+                    const markBg = n.mark >= 7 ? 'bg-emerald-500/10' : n.mark >= 5 ? 'bg-yellow-500/10' : 'bg-red-500/10';
+                    const isViewed = viewed.includes(n.id);
+                    return `
+                    <div class="bg-gray-800 border border-gray-700 rounded-xl p-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 ${markBg} rounded-lg flex items-center justify-center shrink-0">
+                                <span class="text-lg font-bold ${markColor}">${n.mark}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm text-gray-200 leading-relaxed">${escapeHtml(n.text)}</p>
+                                <div class="flex items-center gap-2 mt-1.5">
+                                    <p class="text-xs text-gray-500">${new Date(n.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                                    <span class="text-xs ${isViewed ? 'text-gray-500' : 'text-emerald-400'}">${isViewed ? '✓ Viewed' : '● New'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+
+            container.innerHTML = html;
+            document.getElementById('modal-student-detail').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        // ===== MODALS =====
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Close modal on backdrop click
+        document.querySelectorAll('[id^="modal-"]').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        });
+
+        // ===== TOAST =====
+        function showToast(msg) {
             const toast = document.createElement('div');
-            const color = type === 'success' ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-red-500 bg-red-500/10 text-red-400';
-            toast.className = `toast px-4 py-3 rounded-xl border backdrop-blur-md font-medium shadow-lg flex items-center gap-2 ${color}`;
-            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-5 h-5"></i> ${message}`;
-            document.getElementById('toastContainer').appendChild(toast)
+            toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 text-white px-5 py-3 rounded-xl shadow-2xl z-[9999] text-sm font-medium slide-up';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // ===== UTILS =====
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ===== ENTER KEY =====
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (!document.getElementById('page-auth').classList.contains('active')) return;
+                if (!document.getElementById('form-login').classList.contains('hidden')) {
+                    handleLogin();
+                }
+            }
+        });
+
+        // ===== INIT =====
+        initDB();
+        lucide.createIcons();
+
+        // Auto-login if session exists
+        const savedSession = getData('sb_session', null);
+        if (savedSession) {
+            const users = getUsers();
+            const user = users.find(u => u.id === savedSession);
+            if (user) {
+                currentUser = user;
+                if (user.role === 'admin') {
+                    showPage('page-admin');
+                    renderAdmin();
+                } else {
+                    showPage('page-student');
+                    renderStudent();
+                    checkForNewNotes();
+                }
+            }
+        }
+
+        // Save session on login
+        const origLogin = handleLogin;
+        handleLogin = function() {
+            const id = document.getElementById('login-id').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const users = getUsers();
+            const user = users.find(u => u.id === id && u.password === pass);
+            if (user) {
+                setData('sb_session', user.id);
+            }
+            origLogin();
+        };
+
+        const origLogout = handleLogout;
+        handleLogout = function() {
+            localStorage.removeItem('sb_session');
+            origLogout();
+        };
+    </script>
+<script src="https://deepsite.hf.co/deepsite-badge.js"></script>
+</body>
+</html>
