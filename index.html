@@ -1,203 +1,359 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <base target="_self">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SchoolBook — Premium Portal</title>
+    <title>SchoolBook - Marks & Notes</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        * { font-family: 'Plus Jakarta Sans', sans-serif; selection-background-color: rgba(16,185,129,0.3); }
-        ::-webkit-scrollbar { width: 6px; height: 6px; } ::webkit-scrollbar-track { background: #09090b; } ::webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; } ::webkit-scrollbar-thumb:hover { background: #3f3f46; }
-        .fade-in { animation: fIn 0.25s cubic-bezier(0.16,1,0.3,1); } .slide-up { animation: sUp 0.4s cubic-bezier(0.16,1,0.3,1); }
-        @keyframes fIn { from { opacity: 0; } to { opacity: 1; } } @keyframes sUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .glow-emerald { box-shadow: 0 0 40px -10px rgba(16,185,129,0.2); } .glow-violet { box-shadow: 0 0 40px -10px rgba(139,92,246,0.2); }
-        .pulse-ring { animation: pRing 2s infinite; } @keyframes pRing { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 10px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
-    </style>
-</head>
-<body class="min-h-screen bg-zinc-950 text-zinc-100 antialiased selection:bg-emerald-500/20 selection:text-emerald-400">
-    <div id="authModal" class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 fade-in hidden">
-        <div class="bg-zinc-900/90 rounded-2xl p-8 max-w-md w-full border border-zinc-800/80 shadow-2xl glow-emerald slide-up">
-            <div class="text-center mb-6"><div class="inline-flex w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl items-center justify-center mb-3 border border-emerald-500/20 text-xl shadow-inner"><i class="fas fa-graduation-cap"></i></div><h2 class="text-2xl font-extrabold text-white tracking-tight" id="authTitle">Welcome to SchoolBook</h2><p class="text-xs text-zinc-400 mt-1">Enter credentials to safely access your portal academic matrix.</p></div>
-            <div class="flex mb-6 bg-zinc-950 p-1 rounded-xl border border-zinc-800/60">
-                <button id="loginTab" class="flex-1 py-2 text-sm font-bold text-center rounded-lg bg-zinc-800 text-white shadow-sm transition-all duration-200">Sign In</button>
-                <button id="registerTab" class="flex-1 py-2 text-sm font-bold text-center rounded-lg text-zinc-400 hover:text-white transition-all duration-200">Register</button>
-            </div>
-            <form id="loginForm" class="space-y-4">
-                <div><label class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Account ID</label><div class="relative"><i class="fas fa-id-card absolute left-3.5 top-3.5 text-zinc-500 text-sm"></i><input type="text" id="loginId" class="w-full pl-10 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white text-sm outline-none transition-all placeholder:text-zinc-600" placeholder="e.g. 618371793" required></div></div>
-                <div><label class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Password</label><div class="relative"><i class="fas fa-lock absolute left-3.5 top-3.5 text-zinc-500 text-sm"></i><input type="password" id="loginPassword" class="w-full pl-10 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white text-sm outline-none transition-all placeholder:text-zinc-600" placeholder="••••••••" required></div></div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-950/40 hover:shadow-emerald-500/10 active:scale-[0.99] transition-all duration-150 mt-2 text-sm tracking-wide"><i class="fas fa-sign-in-alt mr-2"></i>Access Workspace</button>
-            </form>
-            <form id="registerForm" class="space-y-4 hidden">
-                <div><label class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">New Numeric ID</label><div class="relative"><i class="fas fa-fingerprint absolute left-3.5 top-3.5 text-zinc-500 text-sm"></i><input type="text" id="registerId" pattern="[0-9]+" title="Strictly numbers allowed" class="w-full pl-10 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 text-white text-sm outline-none transition-all placeholder:text-zinc-600" placeholder="Create unique numeric string" required></div></div>
-                <div><label class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Full Legal Name</label><div class="relative"><i class="fas fa-user absolute left-3.5 top-3.5 text-zinc-500 text-sm"></i><input type="text" id="registerName" class="w-full pl-10 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 text-white text-sm outline-none transition-all placeholder:text-zinc-600" placeholder="First and Last Name" required></div></div>
-                <div><label class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Secure Password</label><div class="relative"><i class="fas fa-shield-alt absolute left-3.5 top-3.5 text-zinc-500 text-sm"></i><input type="password" id="registerPassword" minlength="6" class="w-full pl-10 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 text-white text-sm outline-none transition-all placeholder:text-zinc-600" placeholder="Min. 6 alphanumeric keys" required></div></div>
-                <div><label class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Account Assignment</label><div class="relative"><i class="fas fa-users-cog absolute left-3.5 top-3.5 text-zinc-500 text-sm"></i><select id="registerRole" class="w-full pl-10 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 text-white text-sm outline-none transition-all appearance-none cursor-pointer"><option value="student">Student Account</option><option value="teacher">Faculty Admin</option></select></div></div>
-                <button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-violet-950/40 hover:shadow-violet-500/10 active:scale-[0.99] transition-all duration-150 mt-2 text-sm tracking-wide"><i class="fas fa-user-plus mr-2"></i>Deploy Profile</button>
-            </form>
-        </div>
-    </div>
-        <div id="notePopup" class="fixed inset-0 bg-emerald-950/40 backdrop-blur-xl flex items-center justify-center z-50 p-4 fade-in hidden">
-        <div class="bg-zinc-900 rounded-2xl p-7 max-w-md w-full border-2 border-emerald-500 shadow-2xl shadow-emerald-950/40 slide-up relative">
-            <button id="closeNote" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors duration-150"><i class="fas fa-times text-xl"></i></button>
-            <div class="flex items-center mb-4"><div class="w-11 h-11 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center text-lg"><i class="fas fa-bell-on pulse-ring rounded-full"></i></div><div class="ml-3"><h3 class="text-lg font-bold text-white tracking-tight">System Notification</h3><p class="text-[11px] font-semibold uppercase text-emerald-400 tracking-wider" id="noteFrom"></p></div></div>
-            <div class="bg-zinc-950 rounded-xl p-4 border border-zinc-850 mb-4 shadow-inner"><p class="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap" id="noteContent"></p></div>
-            <div class="flex items-center justify-between mb-4"><p class="text-[10px] text-zinc-500 font-medium" id="noteDate"></p><span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[9px] rounded font-bold uppercase tracking-widest border border-emerald-500/10">Priority Delivery</span></div>
-            <button id="markNoteRead" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-all duration-150 text-sm shadow-md shadow-emerald-900/30">Acknowledge & Close</button>
-        </div>
-    </div>
-    <div id="app" class="min-h-screen flex flex-col hidden">
-        <header class="bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800/60 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-6 py-3.5 w-full flex justify-between items-center">
-                <div class="flex items-center"><div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mr-3 shadow-md shadow-emerald-900/30 border border-emerald-400/20"><i class="fas fa-shield-halved text-white text-base"></i></div><div><h1 class="text-base font-black text-white tracking-tight leading-none">SchoolBook</h1><p class="text-emerald-400 text-[10px] font-bold uppercase tracking-widest mt-1" id="userRoleBadge"></p></div></div>
-                <div class="flex items-center space-x-3">
-                    <div class="flex items-center bg-zinc-950/80 px-3.5 py-1.5 rounded-xl border border-zinc-850"><div class="w-6.5 h-6.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-center mr-2 text-[10px] font-extrabold text-emerald-400" id="userInitials"></div><span class="text-xs font-bold text-zinc-200" id="userName"></span></div>
-                    <button id="logoutBtn" class="bg-zinc-800 hover:bg-red-950/60 border border-zinc-700/60 hover:border-red-800 text-zinc-300 hover:text-red-400 p-2.5 md:px-3.5 md:py-2 rounded-xl text-xs font-bold transition-all duration-150 flex items-center"><i class="fas fa-sign-out-alt md:mr-1.5"></i><span class="hidden md:inline">Log Out</span></button>
-                </div>
-            </div>
-        </header>
-        <main class="flex-1 max-w-7xl mx-auto px-6 py-8 w-full">
-            <div id="teacherDashboard" class="hidden space-y-6">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-zinc-900 to-zinc-900/40 p-6 rounded-2xl border border-zinc-800/80 shadow-xl"><div class="space-y-0.5"><h2 class="text-lg font-bold text-white tracking-tight">Faculty Control Panel</h2><p class="text-xs text-zinc-400">Perform real-time continuous evaluation modeling and distribute dynamic encrypted notices.</p></div><div class="flex space-x-3"><button id="addMarkBtn" class="bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/20 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-emerald-950/40 transition-all flex items-center"><i class="fas fa-plus mr-1.5"></i>New Assessment</button><button id="sendNoteBtn" class="bg-violet-600 hover:bg-violet-500 border border-violet-500/20 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-violet-950/40 transition-all flex items-center"><i class="fas fa-paper-plane mr-1.5"></i>Transmit Notice</button></div></div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6"><div class="bg-zinc-900/60 rounded-2xl p-5 border border-zinc-850 shadow-sm lg:col-span-1"><h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4 flex items-center"><i class="fas fa-id-badge text-emerald-400 mr-2 text-sm"></i>Active Student Registry</h3><div class="space-y-2 max-h-[440px] overflow-y-auto pr-1" id="studentsList"></div></div><div class="bg-zinc-900/60 rounded-2xl p-5 border border-zinc-850 shadow-sm lg:col-span-2"><h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4 flex items-center"><i class="fas fa-wave-pulse text-violet-400 mr-2 text-sm"></i>Recent Operations Log</h3><div class="space-y-2 max-h-[440px] overflow-y-auto pr-1" id="recentMarks"></div></div></div>
-            </div>
-            <div id="studentDashboard" class="hidden space-y-6">
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4"><div class="bg-zinc-900/60 rounded-2xl p-5 border border-zinc-850 flex items-center justify-between shadow-sm relative overflow-hidden"><div class="z-10"><p class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">GPA Metrics Average</p><p class="text-3xl font-black text-white mt-1.5 tracking-tight" id="averageMark">0.00</p></div><div class="w-11 h-11 bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 rounded-xl flex items-center justify-center text-lg z-10"><i class="fas fa-chart-line-up"></i></div><div class="absolute -right-4 -bottom-4 text-emerald-500/5 text-6xl pointer-events-none font-bold"><i class="fas fa-percentage"></i></div></div><div class="bg-zinc-900/60 rounded-2xl p-5 border border-zinc-850 flex items-center justify-between shadow-sm relative overflow-hidden"><div class="z-10"><p class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Total Active Metrics</p><p class="text-3xl font-black text-white mt-1.5 tracking-tight" id="totalMarks">0</p></div><div class="w-11 h-11 bg-violet-500/10 text-violet-400 border border-violet-500/10 rounded-xl flex items-center justify-center text-lg z-10"><i class="fas fa-folder-open"></i></div><div class="absolute -right-4 -bottom-4 text-violet-500/5 text-6xl pointer-events-none font-bold"><i class="fas fa-list-numeric"></i></div></div><div class="bg-zinc-900/60 rounded-2xl p-5 border border-zinc-850 flex items-center justify-between shadow-sm col-span-2 sm:col-span-1 relative overflow-hidden"><div class="z-10"><p class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Pending Sync Alerts</p><p class="text-3xl font-black text-white mt-1.5 tracking-tight" id="studentUnreadCount">0</p></div><div class="w-11 h-11 bg-amber-500/10 text-amber-400 border border-amber-500/10 rounded-xl flex items-center justify-center text-lg z-10" id="alertBellIcon"><i class="fas fa-envelope-dot"></i></div></div></div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6"><div class="bg-zinc-900/60 rounded-2xl p-6 border border-zinc-850 shadow-sm lg:col-span-2"><h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4 flex items-center"><i class="fas fa-table-list text-emerald-400 mr-2 text-sm"></i>Official Academic Record</h3><div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-zinc-500"><th class="pb-3">Course / Module</th><th class="pb-3">Evaluation Unit</th><th class="pb-3">Assigned Timestamp</th><th class="pb-3 text-right">Authorized By</th></tr></thead><tbody id="studentMarksTable" class="divide-y divide-zinc-850 text-xs font-medium"></tbody></table></div></div><div class="bg-zinc-900/60 rounded-2xl p-6 border border-zinc-850 shadow-sm lg:col-span-1"><h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-4 flex items-center"><i class="fas fa-comment-alt-lines text-violet-400 mr-2 text-sm"></i>Archived Communication Feeds</h3><div class="space-y-3 max-h-[380px] overflow-y-auto pr-1" id="studentNotesList"></div></div></div>
-            </div>
-        </main>
-    </div>
-    <div id="addMarkModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in hidden"><div class="bg-zinc-900 rounded-2xl p-6 max-w-sm w-full border border-zinc-800 glow-emerald slide-up"><div class="flex justify-between items-center mb-5"><div><h2 class="text-lg font-bold text-white tracking-tight">Log Assessment</h2><p class="text-[11px] text-zinc-400">Map precise marks to the central cloud ledger.</p></div><button id="closeMarkModal" class="text-zinc-500 hover:text-white transition"><i class="fas fa-times"></i></button></div><form id="addMarkForm" class="space-y-4 text-xs font-bold uppercase tracking-wider text-zinc-400"><div><label class="block mb-1.5">Recipient Student</label><select id="markStudent" class="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white outline-none focus:ring-2 focus:ring-emerald-500 font-medium tracking-normal text-sm cursor-pointer"></select></div><div><label class="block mb-1.5">Subject / Course Label</label><input type="text" id="markSubject" class="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white outline-none focus:ring-2 focus:ring-emerald-500 font-medium tracking-normal normal-case text-sm" placeholder="e.g. German Grammar" required></div><div><label class="block mb-1.5">Evaluation Metric Score (0 - 10)</label><input type="number" id="markValue" min="0" max="10" step="0.1" class="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white outline-none focus:ring-2 focus:ring-emerald-500 font-medium tracking-normal text-sm" placeholder="10.0" required></div><button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition text-xs tracking-wide normal-case mt-2">Publish Score Data</button></form></div></div>
-    <div id="sendNoteModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 fade-in hidden"><div class="bg-zinc-900 rounded-2xl p-6 max-w-sm w-full border border-zinc-800 glow-violet slide-up"><div class="flex justify-between items-center mb-5"><div><h2 class="text-lg font-bold text-white tracking-tight">Dispatch Crypt Notice</h2><p class="text-[11px] text-zinc-400">Broadcast explicit system notification layers.</p></div><button id="closeNoteModal" class="text-zinc-500 hover:text-white transition"><i class="fas fa-times"></i></button></div><form id="sendNoteForm" class="space-y-4 text-xs font-bold uppercase tracking-wider text-zinc-400"><div><label class="block mb-1.5">Target Destination</label><select id="noteRecipient" class="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white outline-none focus:ring-2 focus:ring-violet-500 font-medium tracking-normal text-sm cursor-pointer"></select></div><div><label class="block mb-1.5">Note Context Payload</label><textarea id="noteMessage" rows="4" class="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-white outline-none focus:ring-2 focus:ring-violet-500 font-medium tracking-normal normal-case text-sm resize-none" placeholder="Provide system internal tracking feedback context..." required></textarea></div><button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 rounded-xl transition text-xs tracking-wide normal-case mt-2">Transmit Broadcast Packet</button></form></div></div>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDjqx9BvsCLo9z5lWGZo5eIOVRVJO8q3MU",
-            authDomain: "marks-26ab0.firebaseapp.com",
-            projectId: "marks-26ab0",
-            storageBucket: "marks-26ab0.firebasestorage.app",
-            messagingSenderId: "162106519149",
-            appId: "1:162106519149:web:021000a9d3f691d73c5964",
-            measurementId: "G-EZG9HQYBSJ"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth(); const db = firebase.firestore();
-        const state = { user: null, students: [], marks: [], notes: [] };
-                const ui = {
-            authModal: document.getElementById('authModal'), app: document.getElementById('app'), loginForm: document.getElementById('loginForm'), registerForm: document.getElementById('registerForm'),
-            loginTab: document.getElementById('loginTab'), registerTab: document.getElementById('registerTab'), authTitle: document.getElementById('authTitle'), logoutBtn: document.getElementById('logoutBtn'),
-            loginId: document.getElementById('loginId'), loginPassword: document.getElementById('loginPassword'), registerId: document.getElementById('registerId'), registerName: document.getElementById('registerName'),
-            registerPassword: document.getElementById('registerPassword'), registerRole: document.getElementById('registerRole'), teacherDashboard: document.getElementById('teacherDashboard'),
-            studentDashboard: document.getElementById('studentDashboard'), userRoleBadge: document.getElementById('userRoleBadge'), userName: document.getElementById('userName'), userInitials: document.getElementById('userInitials'),
-            studentsList: document.getElementById('studentsList'), recentMarks: document.getElementById('recentMarks'), averageMark: document.getElementById('averageMark'), totalMarks: document.getElementById('totalMarks'),
-            studentUnreadCount: document.getElementById('studentUnreadCount'), studentMarksTable: document.getElementById('studentMarksTable'), studentNotesList: document.getElementById('studentNotesList'),
-            addMarkBtn: document.getElementById('addMarkBtn'), sendNoteBtn: document.getElementById('sendNoteBtn'), addMarkModal: document.getElementById('addMarkModal'), sendNoteModal: document.getElementById('sendNoteModal'),
-            addMarkForm: document.getElementById('addMarkForm'), sendNoteForm: document.getElementById('sendNoteForm'), closeMarkModal: document.getElementById('closeMarkModal'), closeNoteModal: document.getElementById('closeNoteModal'),
-            markStudent: document.getElementById('markStudent'), markSubject: document.getElementById('markSubject'), markValue: document.getElementById('markValue'), noteRecipient: document.getElementById('noteRecipient'),
-            noteMessage: document.getElementById('noteMessage'), notePopup: document.getElementById('notePopup'), closeNote: document.getElementById('closeNote'), markNoteRead: document.getElementById('markNoteRead'),
-            noteContent: document.getElementById('noteContent'), noteFrom: document.getElementById('noteFrom'), noteDate: document.getElementById('noteDate'), bell: document.getElementById('alertBellIcon')
-        };
-        const notify = (m, s=false) => { const el = document.createElement('div'); el.className = `fixed bottom-6 right-6 px-5 py-3 rounded-xl z-50 text-xs font-bold shadow-2xl tracking-wide border slide-up ${s?'bg-emerald-950/80 text-emerald-400 border-emerald-500/20':'bg-red-950/80 text-red-400 border-red-500/20'} backdrop-blur-md`; el.textContent = m; document.body.appendChild(el); setTimeout(()=>el.remove(),3000); };
-        const getInitials = n => n ? n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '??';
-        const cDate = d => { if(!d) return 'Just now'; const t = d.toDate ? d.toDate() : new Date(d); return t.toLocaleDateString(undefined, {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); };
-        const gColor = v => v >= 8.5 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : v >= 5.0 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20';
-
-        async function initData(u) {
-            state.user = u;
-            db.collection('users').doc(u.id).onSnapshot(doc => { if(doc.exists) { state.user = { ...state.user, ...doc.data() }; syncDashboards(); } });
-            if(u.role === 'teacher') {
-                db.collection('users').where('role', '==', 'student').onSnapshot(snap => { state.students = snap.docs.map(d=>d.data()); syncTeacherViews(); });
-                db.collection('marks').orderBy('date', 'desc').limit(40).onSnapshot(snap => { state.marks = snap.docs.map(d=>({id:d.id,...d.data()})); syncTeacherViews(); });
-            } else {
-                db.collection('marks').where('studentId', '==', u.id).onSnapshot(snap => { state.marks = snap.docs.map(d=>d.data()).sort((a,b)=>b.date-a.date); syncStudentViews(); });
-                db.collection('notes').where('toId', '==', u.id).onSnapshot(snap => { state.notes = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.date-a.date); syncStudentViews(); });
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    }
+                }
             }
         }
-        function syncDashboards() {
-            ui.userName.textContent = state.user.name; ui.userInitials.textContent = getInitials(state.user.name);
-            ui.userRoleBadge.textContent = state.user.role === 'teacher' ? 'Faculty Admin System' : `Identification Module: ${state.user.id}`;
-            ui.authModal.classList.add('hidden'); ui.app.classList.remove('hidden');
-            if(state.user.role==='teacher') { ui.teacherDashboard.classList.remove('hidden'); ui.studentDashboard.classList.add('hidden'); }
-            else { ui.studentDashboard.classList.remove('hidden'); ui.teacherDashboard.classList.add('hidden'); }
-        }
-        function syncTeacherViews() {
-            ui.studentsList.innerHTML = state.students.map(s => `<div class="p-3 bg-zinc-900/40 rounded-xl border border-zinc-850/60 flex items-center justify-between"><div class="flex items-center"><div class="w-8 h-8 bg-zinc-800 border border-zinc-750 rounded-lg flex items-center justify-center text-[10px] font-bold text-zinc-300 mr-2.5">${getInitials(s.name)}</div><div><p class="text-xs font-bold text-white leading-tight">${s.name}</p><p class="text-[10px] font-medium text-zinc-500 mt-0.5">Matrix key ID: ${s.id}</p></div></div></div>`).join('') || '<p class="text-[11px] text-zinc-600 text-center py-6 font-medium">Registry empty.</p>';
-            const opt = state.students.map(s => `<option value="${s.id}">${s.name} (${s.id})</option>`).join('');
-            ui.markStudent.innerHTML = opt; ui.noteRecipient.innerHTML = opt;
-            ui.recentMarks.innerHTML = state.marks.map(m => { const sName = state.students.find(s=>s.id===m.studentId)?.name || `ID: ${m.studentId}`; return `<div class="p-3 bg-zinc-900/40 rounded-xl border border-zinc-850/60 flex items-center justify-between"><div><p class="text-xs font-bold text-white">${m.subject}</p><p class="text-[10px] font-medium text-zinc-400 mt-0.5">Assigned to: <span class="text-zinc-300">${sName}</span> • Verified: ${m.teacherName}</p></div><div class="text-right"><span class="px-2.5 py-0.5 text-[10px] font-extrabold border rounded-md ${gColor(m.value)}">${parseFloat(m.value).toFixed(1)}</span><p class="text-[9px] font-medium text-zinc-500 mt-1">${cDate(m.date)}</p></div></div>`; }).join('') || '<p class="text-[11px] text-zinc-600 text-center py-6 font-medium">No system metrics recorded.</p>';
-        }
-        function syncStudentViews() {
-            const avg = state.marks.length ? (state.marks.reduce((acc,m)=>acc+m.value,0)/state.marks.length).toFixed(2) : '0.00';
-            ui.averageMark.textContent = avg; ui.totalMarks.textContent = state.marks.length;
-            const unread = state.notes.filter(n=>!n.read); ui.studentUnreadCount.textContent = unread.length;
-            if(unread.length > 0) { ui.bell.className = 'w-11 h-11 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl flex items-center justify-center text-lg pulse-g pulse-ring'; triggerPopupAlert(unread[0]); }
-            else { ui.bell.className = 'w-11 h-11 bg-zinc-950 text-zinc-500 border border-zinc-850 rounded-xl flex items-center justify-center text-lg'; }
-            ui.studentMarksTable.innerHTML = state.marks.map(m => `<tr class="hover:bg-zinc-900/40 transition-colors duration-100"><td class="py-3 text-white font-bold">${m.subject}</td><td class="py-3"><span class="px-2.5 py-0.5 text-[10px] font-extrabold border rounded-md ${gColor(m.value)}">${parseFloat(m.value).toFixed(1)}</span></td><td class="py-3 text-zinc-400 font-medium text-[11px]">${cDate(m.date)}</td><td class="py-3 text-right text-zinc-400 text-[11px] font-semibold">${m.teacherName}</td></tr>`).join('') || '<tr><td colspan="4" class="text-center text-[11px] text-zinc-600 font-medium py-8">Your matrix pipeline remains empty.</td></tr>';
-            ui.studentNotesList.innerHTML = state.notes.map(n => `<div class="p-3.5 bg-zinc-900/40 rounded-xl border ${n.read?'border-zinc-850':'border-violet-500/20 bg-violet-950/5'} relative"><div class="flex justify-between items-center mb-1.5"><p class="text-[10px] font-bold text-zinc-400">Instructor: ${n.fromName}</p><span class="text-[9px] font-medium text-zinc-500">${cDate(n.date)}</span></div><p class="text-xs text-zinc-200 font-medium leading-relaxed whitespace-pre-wrap">${n.message}</p>${n.read?'':'<span class="absolute top-3.5 right-3 w-1.5 h-1.5 bg-violet-400 rounded-full animate-pulse"></span>'}</div>`).join('') || '<p class="text-[11px] text-zinc-600 text-center py-6 font-medium">Archived notice log empty.</p>';
-        }
-        function triggerPopupAlert(n) { ui.noteContent.textContent = n.message; ui.noteFrom.textContent = `Origin Authority: ${n.fromName}`; ui.noteDate.textContent = `Timestamp: ${cDate(n.date)}`; ui.markNoteRead.dataset.id = n.id; ui.notePopup.classList.remove('hidden'); }
-
-        ui.loginTab.addEventListener('click', () => { ui.loginForm.classList.remove('hidden'); ui.registerForm.classList.add('hidden'); ui.loginTab.className = "flex-1 py-2 text-sm font-bold text-center rounded-lg bg-zinc-800 text-white shadow-sm transition-all"; ui.registerTab.className = "flex-1 py-2 text-sm font-bold text-center rounded-lg text-zinc-400 hover:text-white transition-all"; ui.authTitle.textContent="Welcome to SchoolBook"; });
-        ui.registerTab.addEventListener('click', () => { ui.registerForm.classList.remove('hidden'); ui.loginForm.classList.add('hidden'); ui.registerTab.className = "flex-1 py-2 text-sm font-bold text-center rounded-lg bg-zinc-800 text-white shadow-sm transition-all"; ui.loginTab.className = "flex-1 py-2 text-sm font-bold text-center rounded-lg text-zinc-400 hover:text-white transition-all"; ui.authTitle.textContent="Deploy New Credentials"; });
-
-        ui.loginForm.addEventListener('submit', async e => {
-            e.preventDefault(); const id = ui.loginId.value.trim(), pass = ui.loginPassword.value;
-            try {
-                if(id === "666666" && pass === "lukajiji") { await auth.signInWithEmailAndPassword("admin666666@schoolbook.internal", pass); return; }
-                const snap = await db.collection('users').doc(id).get(); if(!snap.exists) throw new Error("ID sequence does not map to initialized workspace.");
-                await auth.signInWithEmailAndPassword(`${id}@schoolbook.internal`, pass);
-            } catch(err) { notify(err.message); }
-        });
-        ui.registerForm.addEventListener('submit', async e => {
-            e.preventDefault(); const id = ui.registerId.value.trim(), name = ui.registerName.value.trim(), pass = ui.registerPassword.value, role = ui.registerRole.value;
-            try {
-                const check = await db.collection('users').doc(id).get(); if(check.exists) throw new Error("Target allocation ID signature occupied.");
-                await auth.createUserWithEmailAndPassword(`${id}@schoolbook.internal`, pass);
-                await db.collection('users').doc(id).set({ id, name, role, created: firebase.firestore.FieldValue.serverTimestamp() });
-                notify("Credentials initialized securely.", true);
-            } catch(err) { notify(err.message); }
-        });
-
-        ui.logoutBtn.addEventListener('click', () => auth.signOut());
-        ui.addMarkBtn.addEventListener('click', () => ui.addMarkModal.classList.remove('hidden'));
-        ui.closeMarkModal.addEventListener('click', () => ui.addMarkModal.classList.add('hidden'));
-        ui.sendNoteBtn.addEventListener('click', () => ui.sendNoteModal.classList.remove('hidden'));
-        ui.closeNoteModal.addEventListener('click', () => ui.sendNoteModal.classList.add('hidden'));
-        ui.closeNote.addEventListener('click', () => ui.notePopup.classList.add('hidden'));
-
-        ui.addMarkForm.addEventListener('submit', async e => {
-            e.preventDefault();
-            try {
-                await db.collection('marks').add({ studentId: ui.markStudent.value, subject: ui.markSubject.value.trim(), value: parseFloat(ui.markValue.value), teacherId: state.user.id, teacherName: state.user.name, date: firebase.firestore.FieldValue.serverTimestamp() });
-                notify("Metric mapped to directory array.", true); ui.addMarkModal.classList.add('hidden'); ui.addMarkForm.reset();
-            } catch(err) { notify(err.message); }
-        });
-        ui.sendNoteForm.addEventListener('submit', async e => {
-            e.preventDefault();
-            try {
-                await db.collection('notes').add({ toId: ui.noteRecipient.value, message: ui.noteMessage.value.trim(), fromId: state.user.id, fromName: state.user.name, read: false, date: firebase.firestore.FieldValue.serverTimestamp() });
-                notify("Notice payload successfully targeted.", true); ui.sendNoteModal.classList.add('hidden'); ui.sendNoteForm.reset();
-            } catch(err) { notify(err.message); }
-        });
-        ui.markNoteRead.addEventListener('click', async () => {
-            const nid = ui.markNoteRead.dataset.id; ui.notePopup.classList.add('hidden');
-            if(nid) { try { await db.collection('notes').doc(nid).update({ read: true }); } catch(err) { console.error(err); } }
-        });
-
-        auth.onAuthStateChanged(async u => {
-            if(u) {
-                const uid = u.email.split('@')[0];
-                if(uid === "admin666666") {
-                    const snap = await db.collection('users').doc("666666").get();
-                    if(!snap.exists) await db.collection('users').doc("666666").set({ id: "666666", name: "System Admin", role: "teacher" });
-                    initData({ id: "666666", name: "System Admin", role: "teacher" });
-                } else { initData({ id: uid }); }
-            } else { state.user = null; ui.app.classList.add('hidden'); ui.notePopup.classList.add('hidden'); ui.authModal.classList.remove('hidden'); }
-        });
     </script>
-</body>
-</html>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+        
+        @keyframes slideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .animate-slideUp { animation: slideUp 0.5s ease-out forwards; }
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+        .animate-scaleIn { animation: scaleIn 0.3s ease-out forwards; }
+        .animate-pulse-green { animation: pulse-green 2s infinite; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        .mark-circle {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        .mark-0, .mark-1 { background: #fecaca; color: #991b1b; }
+        .mark-2, .mark-3 { background: #fed7aa; color: #9a3412; }
+        .mark-4, .mark-5 { background: #fef08a; color: #854d0e; }
+        .mark-6, .mark-7 { background: #bbf7d0; color: #166534; }
+        .mark-8 { background: #86efac; color: #166534; }
+        .mark-9, .mark-10 { background: #4ade80; color: #052e16; }
+
+        .sidebar-item { transition: all 0.2s; }
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+        .sidebar-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 3px solid #22c55e;
+        }
+        .notification-overlay {
+            backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.6);
+        }
+        .toast { animation: slideUp 0.3s ease-out forwards; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e1b4b; }
+        ::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 3px; }
+        
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 min-h-screen">
+
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2"></div>
+
+    <!-- FULL SCREEN NOTE POPUP -->
+    <div id="notePopup" class="hidden fixed inset-0 z-[90] notification-overlay flex items-center justify-center p-4">
+        <div class="animate-scaleIn bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl shadow-2xl max-w-lg w-full p-8 text-white relative animate-pulse-green">
+            <button onclick="dismissNotePopup()" class="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i data-lucide="bell-ring" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <p class="text-white/70 text-sm font-medium">New Mark Received</p>
+                    <p id="popupTime" class="text-white/60 text-xs"></p>
+                </div>
+            </div>
+            <div class="bg-white/15 rounded-2xl p-6 mb-4">
+                <div class="flex items-center gap-4 mb-3">
+                    <span class="text-white/70 text-sm">Mark:</span>
+                    <span id="popupMark" class="text-4xl font-black font-display"></span>
+                    <span class="text-white/50 text-lg">/ 10</span>
+                </div>
+                <div class="border-t border-white/20 pt-3">
+                    <span class="text-white/70 text-sm">Note:</span>
+                    <p id="popupNote" class="text-lg font-medium mt-1 leading-relaxed"></p>
+                </div>
+            </div>
+            <p class="text-center text-white/50 text-sm">Press X to dismiss</p>
+        </div>
+    </div>
+
+    <!-- AUTH SCREEN -->
+    <div id="authScreen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <div class="text-center mb-8 animate-slideUp">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-2xl shadow-indigo-500/30 mb-4 animate-float">
+                    <i data-lucide="book-open" class="w-10 h-10 text-white"></i>
+                </div>
+                <h1 class="text-4xl font-black text-white font-display mb-2">SchoolBook</h1>
+                <p class="text-slate-400">Marks & Notes for Students</p>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <div id="loginForm" class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 animate-slideUp" style="animation-delay: 0.1s">
+                <h2 class="text-2xl font-bold text-white mb-6">Sign In</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm text-slate-400 mb-1 block">Student ID</label>
+                        <div class="relative">
+                            <i data-lucide="hash" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
+                            <input id="loginId" type="text" placeholder="e.g. 618371793" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-400 mb-1 block">Password</label>
+                        <div class="relative">
+                            <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
+                            <input id="loginPass" type="password" placeholder="Your password" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                        </div>
+                    </div>
+                    <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98]">
+                        Sign In
+                    </button>
+                </div>
+                <p class="text-slate-500 text-center mt-5 text-sm">Don't have an account? <button onclick="showRegister()" class="text-indigo-400 hover:text-indigo-300 font-medium">Register</button></p>
+            </div>
+
+            <!-- REGISTER FORM -->
+            <div id="registerForm" class="hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8">
+                <h2 class="text-2xl font-bold text-white mb-6">Create Account</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm text-slate-400 mb-1 block">Full Name</label>
+                        <div class="relative">
+                            <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
+                            <input id="regName" type="text" placeholder="Your full name" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-400 mb-1 block">Student ID</label>
+                        <div class="relative">
+                            <i data-lucide="hash" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
+                            <input id="regId" type="text" placeholder="e.g. 618371793" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-400 mb-1 block">Password</label>
+                        <div class="relative">
+                            <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"></i>
+                            <input id="regPass" type="password" placeholder="Choose a password" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+                        </div>
+                    </div>
+                    <button onclick="handleRegister()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 rounded-xl transition-all hover:shadow-lg hover:shadow-green-500/25 active:scale-[0.98]">
+                        Create Account
+                    </button>
+                </div>
+                <p class="text-slate-500 text-center mt-5 text-sm">Already have an account? <button onclick="showLogin()" class="text-indigo-400 hover:text-indigo-300 font-medium">Sign In</button></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="adminDashboard" class="hidden min-h-screen">
+        <div class="flex min-h-screen">
+            
+            <!-- Sidebar -->
+            <aside class="hidden lg:flex w-64 bg-slate-900/80 backdrop-blur-xl border-r border-white/5 flex-col">
+                <div class="p-6 border-b border-white/5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-white font-bold font-display">SchoolBook</span>
+                    </div>
+                </div>
+                <nav class="flex-1 p-4 space-y-1">
+                    <button onclick="showAdminView('students')" id="navStudents" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
+                        <i data-lucide="users" class="w-5 h-5"></i> Students
+                    </button>
+                    <button onclick="showAdminView('give')" id="navGive" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
+                        <i data-lucide="pen-tool" class="w-5 h-5"></i> Give Mark & Note
+                    </button>
+                    <button onclick="showAdminView('history')" id="navHistory" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 text-sm font-medium">
+                        <i data-lucide="scroll-text" class="w-5 h-5"></i> All Notes History
+                    </button>
+                </nav>
+                <div class="p-4 border-t border-white/5">
+                    <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 text-sm font-medium transition-all">
+                        <i data-lucide="log-out" class="w-5 h-5"></i> Logout
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Workspace -->
+            <div class="flex-1 flex flex-col">
+                <!-- Mobile Header -->
+                <header class="lg:hidden bg-slate-900/80 backdrop-blur-xl border-b border-white/5 p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-white font-bold font-display">SchoolBook</span>
+                    </div>
+                    <button onclick="handleLogout()" class="text-slate-400 hover:text-white transition-colors">
+                        <i data-lucide="log-out" class="w-6 h-6"></i>
+                    </button>
+                </header>
+
+                <!-- Content Area -->
+                <main class="flex-1 p-6 lg:p-10 overflow-y-auto">
+                    
+                    <!-- Students View -->
+                    <div id="view-students" class="admin-view animate-fadeIn">
+                        <h2 class="text-3xl font-display font-bold text-white mb-6">Registered Students</h2>
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+                            <i data-lucide="users" class="w-12 h-12 text-slate-500 mx-auto mb-4"></i>
+                            <p class="text-slate-400">Student list will appear here.</p>
+                        </div>
+                    </div>
+
+                    <!-- Give Mark View -->
+                    <div id="view-give" class="admin-view hidden animate-fadeIn">
+                        <h2 class="text-3xl font-display font-bold text-white mb-6">Give Mark & Note</h2>
+                        <div class="max-w-2xl bg-white/5 border border-white/10 rounded-2xl p-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-sm text-slate-400 mb-1 block">Select Student</label>
+                                    <select class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500">
+                                        <option class="text-slate-900">Student 1 (618371793)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-slate-400 mb-1 block">Mark (0-10)</label>
+                                    <input type="number" min="0" max="10" placeholder="Enter mark" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-slate-400 mb-1 block">Note / Feedback</label>
+                                    <textarea rows="4" placeholder="Great job on..." class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500"></textarea>
+                                </div>
+                                <button class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 rounded-xl transition-all">Submit Evaluation</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History View -->
+                    <div id="view-history" class="admin-view hidden animate-fadeIn">
+                        <h2 class="text-3xl font-display font-bold text-white mb-6">All Notes History</h2>
+                        <div class="bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+                            <i data-lucide="scroll-text" class="w-12 h-12 text-slate-500 mx-auto mb-4"></i>
+                            <p class="text-slate-400">History logs will appear here.</p>
+                        </div>
+                    </div>
+
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT FOR FUNCTIONALITY -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Auth Logic
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('animate-slideUp');
+        }
+
+        function showLogin() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('loginForm').classList.add('animate-slideUp');
+        }
+
+        function handleLogin() {
+            // Mock Login Action
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.remove('hidden');
+        }
+
+        function handleRegister() {
+            // Mock Register Action
+            handleLogin();
+        }
+
+        function handleLogout() {
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+            showLogin();
+        }
+
+        // Dashboard View Logic
+        function showAdminView(viewId) {
+            // Hide all views
+            const views = document.querySelectorAll('.admin-view');
+            views.forEach(view => view.classList.add('hidden'));
+
+            // Show selected view
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+
+            // Update sidebar active states
+            const navItems = ['students', 'give', 'history'];
+            navItems.forEach(item => {
+                const btn = document.getElementById(`nav${item.charAt(0).toUpperCase() + item.slice(1)}`);
+                if(item === viewId) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // Popup Logic
+        function dismissNotePopup() {
+            document.getEle
